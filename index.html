@@ -11,41 +11,32 @@
                     var listElement = document.createElement("ul");
                     listElement.appendChild(entities.reduce(function (frag, entity) {
                         var element = document.createElement("li");
-                        element.textContent = entity.name;
-                        element.setAttribute("data-id", entity.id);
+                        element.textContent = entity.device.id; // Changed to display device ID
+                        element.setAttribute("data-id", entity.device.id);
                         frag.appendChild(element);
                         return frag;
-                    };
-                    document.createDocumentFragment()));
+                    }, document.createDocumentFragment()));
                     return listElement;
                 },
-                goToVehicles = function (event) {
-                    var id = event.target.getAttribute("data-id");
-                    if (id) {
-                        state.gotoPage("device", {
-                            id: id
-                        });
-                    }
-                },
                 refreshPage = function () {
-                    api.call("Get", {
-                        typeName: "Device"
+                    api.call("GetFeed", {
+                        typeName: "StatusData",
+                        "resultsLimit": 10,
+                        "fromVersion": "0000000000"
                     }, function (result) {
-                        center.addEventListener("click", goToVehicles, false);
-                        center.appendChild(listCreator(result));
+                        console.log("Done: ", result);
+                        var list = listCreator(result).data;
+                        center.innerHTML = "";
+                        center.appendChild(list);
                     }, function (error) {
                         console.log(error.message);
                     });
                 },
                 clearOnLeaving = function () {
-                    center.removeEventListener("click", goToVehicles, false);
                     center.innerHTML = "";
                 };
             return {
                 initialize: function (api, state, callback) {
-                    document.getElementById("vehiclesButton").addEventListener("click", function () {
-                        state.gotoPage("devices");
-                    }, false);
                     callback();
                 },
                 focus: function (api, state) {
@@ -61,9 +52,6 @@
 
 <body>
     <div id="center">
-
-        <button id="vehiclesButton">
-            Go to vehicles page</button>
     </div>
 </body>
 
