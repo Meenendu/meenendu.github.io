@@ -24,7 +24,7 @@
                         "resultsLimit": 10,
                         "fromVersion": "0000000000"
                     }, function (result) {
-                        console.log("Done: ", result);
+                        console.log("result -> data: ", result.data);
                         var list = listCreator(result.data);
                         center.innerHTML = "";
                         center.appendChild(list);
