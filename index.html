@@ -25,7 +25,7 @@
                         "fromVersion": "0000000000"
                     }, function (result) {
                         console.log("Done: ", result);
-                        var list = listCreator(result).data;
+                        var list = listCreator(result.data);
                         center.innerHTML = "";
                         center.appendChild(list);
                     }, function (error) {
