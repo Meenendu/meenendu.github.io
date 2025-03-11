@@ -49,22 +49,60 @@
 
                     return table;
                 },
+                fetchAllStatusData = function () {
+                    return new Promise((resolve, reject) => {
+                        const allStatusData = [];
+                        const resultsLimit = 500;
+                        let offset = null;
+                        let lastId = null;
+
+                        function fetchPage() {
+                            api.call("Get", {
+                                "typeName": "StatusData",
+                                "search": {
+                                    "diagnosticSearch": {
+                                        "id": "DiagnosticBluetoothBeaconInRangeId"
+                                    }
+                                },
+                                "sort": {
+                                    "sortBy": "dateTime",
+                                    "sortDirection": "desc",
+                                    "offset": offset,
+                                    "lastId": lastId
+                                },
+                                "resultsLimit": resultsLimit
+                            }, function (statusData) {
+                                console.log({ statusData })
+                                if (!statusData || statusData.length === 0) {
+                                    resolve(allStatusData);
+                                    return;
+                                }
+
+                                allStatusData.push(...statusData);
+
+                                // Update the offset and lastId for the next page
+                                offset = statusData[statusData.length - 1].dateTime;
+                                lastId = statusData[statusData.length - 1].id;
+
+                                // Fetch the next page
+                                fetchPage();
+                            }, function (error) {
+                                reject(error);
+                            });
+                        }
+
+                        // Start fetching pages
+                        fetchPage();
+                    });
+                },
                 refreshPage = function () {
-                    api.call("Get", {
-                        "typeName": "StatusData",
-                        "search": {
-                            "diagnosticSearch": {
-                                "id": "DiagnosticBluetoothBeaconInRangeId"
-                            }
-                        },
-                        "resultsLimit": 500,
-                    }, function (result) {
-                        console.log("result : ", result);
-                        var list = listCreator(result);
+                    fetchAllStatusData().then(allStatusData => {
+                        console.log(`Total records: ${allStatusData.length}`);
+                        var list = listCreator(allStatusData);
                         center.innerHTML = "";
                         center.appendChild(list);
-                    }, function (error) {
-                        console.log(error.message);
+                    }).catch(error => {
+                        console.error("Failed to fetch status data:", error);
                     });
                 },
                 clearOnLeaving = function () {
