@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Custom Integration Example</title>
+    <title>BLE</title>
     <style>
         body {
             padding: 20px;
@@ -16,19 +16,21 @@
             padding: 20px;
             background-color: white;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            margin: 28px 0;
+            font-size: 18px;
+            text-align: left;
         }
 
         th,
         td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border: 1px solid #222;
         }
 
         th {
@@ -79,7 +81,7 @@
                         var addressCell = document.createElement("td");
                         addressCell.textContent = entity.address; // Show device address
                         var timeCell = document.createElement("td");
-                        timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.timestamp) + "</span>"; // Show time ago
+                        timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>"; // Show time ago
                         row.appendChild(addressCell);
                         row.appendChild(timeCell);
                         table.appendChild(row);
