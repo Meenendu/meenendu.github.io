@@ -97,8 +97,8 @@
                         },
                         "resultsLimit": 100,
                     }, function (result) {
-                        console.log("result -> data: ", result.data);
-                        var list = listCreator(result.data);
+                        console.log("result : ", result);
+                        var list = listCreator(result);
                         center.innerHTML = "";
                         center.appendChild(list);
                     }, function (error) {
