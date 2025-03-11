@@ -34,14 +34,17 @@
                     table.appendChild(headerRow);
 
                     entities.forEach(function (entity) {
-                        var row = document.createElement("tr");
-                        var addressCell = document.createElement("td");
-                        addressCell.textContent = entity.address; // Show device address
-                        var timeCell = document.createElement("td");
-                        timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>"; // Show time ago
-                        row.appendChild(addressCell);
-                        row.appendChild(timeCell);
-                        table.appendChild(row);
+                        var address = entity.address.replace(/^0000/, '').toUpperCase();
+                        if (address.startsWith("C4")) {
+                            var row = document.createElement("tr");
+                            var addressCell = document.createElement("td");
+                            addressCell.textContent = address;
+                            var timeCell = document.createElement("td");
+                            timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>";
+                            row.appendChild(addressCell);
+                            row.appendChild(timeCell);
+                            table.appendChild(row);
+                        }
                     });
 
                     return table;
@@ -54,7 +57,7 @@
                                 "id": "DiagnosticBluetoothBeaconInRangeId"
                             }
                         },
-                        "resultsLimit": 100,
+                        "resultsLimit": 150,
                     }, function (result) {
                         console.log("result : ", result);
                         var list = listCreator(result);
