@@ -3,26 +3,99 @@
 
 <head>
     <title>Custom Integration Example</title>
-    <!-- <link rel="stylesheet" href="integrationExample.css" /> -->
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        #center {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .time-ago {
+            color: gray;
+            font-style: italic;
+        }
+    </style>
+
     <script>
+        // Helper function to calculate time ago
+        function timeAgo(dateTime) {
+            const now = new Date();
+            const diff = now - new Date(dateTime);
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) {
+                return days + " day" + (days > 1 ? "s" : "") + " ago";
+            } else if (hours > 0) {
+                return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
+            } else if (minutes > 0) {
+                return minutes + " minute" + (minutes > 1 ? "s" : "") + " ago";
+            } else {
+                return seconds + " second" + (seconds > 1 ? "s" : "") + " ago";
+            }
+        }
+
         geotab.addin.integrationExample = function (api, state) {
             var center = document.getElementById("center"),
                 listCreator = function (entities) {
-                    var listElement = document.createElement("ul");
-                    listElement.appendChild(entities.reduce(function (frag, entity) {
-                        var element = document.createElement("li");
-                        element.textContent = entity.id; // Changed to display device ID
-                        element.setAttribute("data-id", entity.id);
-                        frag.appendChild(element);
-                        return frag;
-                    }, document.createDocumentFragment()));
-                    return listElement;
+                    var table = document.createElement("table");
+                    var headerRow = document.createElement("tr");
+                    headerRow.innerHTML = "<th>Address</th><th>Time Ago</th>";
+                    table.appendChild(headerRow);
+
+                    entities.forEach(function (entity) {
+                        var row = document.createElement("tr");
+                        var addressCell = document.createElement("td");
+                        addressCell.textContent = entity.address; // Show device address
+                        var timeCell = document.createElement("td");
+                        timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.timestamp) + "</span>"; // Show time ago
+                        row.appendChild(addressCell);
+                        row.appendChild(timeCell);
+                        table.appendChild(row);
+                    });
+
+                    return table;
                 },
                 refreshPage = function () {
-                    api.call("GetFeed", {
-                        typeName: "StatusData",
-                        "resultsLimit": 10,
-                        "fromVersion": "0000000000"
+                    api.call("Get", {
+                        "typeName": "StatusData",
+                        "search": {
+                            "diagnosticSearch": {
+                                "id": "DiagnosticBluetoothBeaconInRangeId"
+                            }
+                        },
+                        "resultsLimit": 100,
                     }, function (result) {
                         console.log("result -> data: ", result.data);
                         var list = listCreator(result.data);
@@ -35,6 +108,7 @@
                 clearOnLeaving = function () {
                     center.innerHTML = "";
                 };
+
             return {
                 initialize: function (api, state, callback) {
                     callback();
@@ -45,14 +119,13 @@
                 blur: function (api, state) {
                     clearOnLeaving();
                 }
-            }
+            };
         };
     </script>
 </head>
 
 <body>
-    <div id="center">
-    </div>
+    <div id="center"></div>
 </body>
 
 </html>
