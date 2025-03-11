@@ -11,8 +11,8 @@
                     var listElement = document.createElement("ul");
                     listElement.appendChild(entities.reduce(function (frag, entity) {
                         var element = document.createElement("li");
-                        element.textContent = entity.device.id; // Changed to display device ID
-                        element.setAttribute("data-id", entity.device.id);
+                        element.textContent = entity.id; // Changed to display device ID
+                        element.setAttribute("data-id", entity.id);
                         frag.appendChild(element);
                         return frag;
                     }, document.createDocumentFragment()));
