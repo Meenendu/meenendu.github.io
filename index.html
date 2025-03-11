@@ -30,7 +30,7 @@
                 listCreator = function (entities) {
                     var table = document.createElement("table");
                     var headerRow = document.createElement("tr");
-                    headerRow.innerHTML = "<th>Address</th><th>Time Ago</th>";
+                    headerRow.innerHTML = "<th>Address</th><th>Reported At</th>";
                     table.appendChild(headerRow);
 
                     entities.forEach(function (entity) {
@@ -57,7 +57,7 @@
                                 "id": "DiagnosticBluetoothBeaconInRangeId"
                             }
                         },
-                        "resultsLimit": 150,
+                        "resultsLimit": 500,
                     }, function (result) {
                         console.log("result : ", result);
                         var list = listCreator(result);
