@@ -81,7 +81,7 @@
                                 allStatusData.push(...statusData);
 
                                 // Update the offset and lastId for the next page
-                                offset = statusData[statusData.length - 1].dateTime;
+                                offset = statusData[statusData.length - 1].version;
                                 lastId = statusData[statusData.length - 1].id;
 
                                 // Fetch the next page
