@@ -25,26 +25,42 @@
             }
         }
 
+        function getDiagnosticId(diagnosticId) {
+            if (diagnosticId) {
+                if (diagnosticId === "a3WBKyxpR9E-tXHOy0cRXjw") {
+                    return "RSSI";
+                } else if (diagnosticId === "aq2dIrRFGfkW3g98ILX98SQ") {
+                    return "Temperature";
+                } else if (diagnosticId === "DiagnosticDeviceBatteryVoltageId") {
+                    return "Battery ";
+                }
+            }
+            return "Unknown Diagnostic";
+        }
+
         geotab.addin.integrationExample = function (api, state) {
             var center = document.getElementById("center"),
                 listCreator = function (entities) {
                     var table = document.createElement("table");
                     var headerRow = document.createElement("tr");
-                    headerRow.innerHTML = "<th>Address</th><th>Reported At</th>";
+                    headerRow.innerHTML = "<th>Id</th><th>Date</th><th>Diagnostic</th><th>Value</th>";
                     table.appendChild(headerRow);
 
                     entities.forEach(function (entity) {
-                        var address = entity.address.replace(/^0000/, '').toUpperCase();
-                        if (address.startsWith("C4")) {
-                            var row = document.createElement("tr");
-                            var addressCell = document.createElement("td");
-                            addressCell.textContent = address;
-                            var timeCell = document.createElement("td");
-                            timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>";
-                            row.appendChild(addressCell);
-                            row.appendChild(timeCell);
-                            table.appendChild(row);
-                        }
+                        var row = document.createElement("tr");
+                        var idCell = document.createElement("td");
+                        idCell.textContent = entity.id;
+                        var timeCell = document.createElement("td");
+                        timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>";
+                        var diagnosticCell = document.createElement("td");
+                        diagnosticCell.textContent = getDiagnosticId(entity.diagnostic.id);
+                        var valueCell = document.createElement("td");
+                        valueCell.textContent = entity.data;
+                        row.appendChild(idCell);
+                        row.appendChild(timeCell);
+                        row.appendChild(diagnosticCell);
+                        row.appendChild(valueCell);
+                        table.appendChild(row);
                     });
 
                     return table;
@@ -52,15 +68,11 @@
                 refreshPage = function () {
                     api.call("Get", {
                         "typeName": "StatusData",
-                        "search": {
-                            "diagnosticSearch": {
-                                "id": "DiagnosticBluetoothBeaconInRangeId"
-                            }
-                        },
                         "sort": {
                             "sortBy": "date",
                             "sortDirection": "desc",
                         },
+                        "resultsLimit": 1000,
                     }, function (result) {
                         console.log("result : ", result);
                         var list = listCreator(result);
