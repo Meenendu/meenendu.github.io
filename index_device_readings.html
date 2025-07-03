@@ -40,47 +40,88 @@
 
         geotab.addin.integrationExample = function (api, state) {
             var center = document.getElementById("center"),
-                listCreator = function (entities) {
+                listCreator = function (entities, devices) {
+                    // Group by device.id and dateTime
+                    const grouped = {};
+                    entities.forEach(function (entity) {
+                        const deviceId = entity.device.id;
+                        const dateTime = entity.dateTime;
+                        const key = deviceId + "|" + dateTime;
+                        if (!grouped[key]) {
+                            grouped[key] = {
+                                deviceId,
+                                dateTime,
+                                diagnostics: {}
+                            };
+                        }
+                        grouped[key].diagnostics[entity.diagnostic.id] = entity.data;
+                    });
+
                     var table = document.createElement("table");
                     var headerRow = document.createElement("tr");
-                    headerRow.innerHTML = "<th>Id</th><th>Date</th><th>Diagnostic</th><th>Value</th>";
+                    headerRow.innerHTML = "<th>Device</th><th>Date</th><th>Temperature</th><th>RSSI</th><th>Battery</th>";
                     table.appendChild(headerRow);
 
-                    entities.forEach(function (entity) {
+                    Object.values(grouped).forEach(function (rowObj) {
                         var row = document.createElement("tr");
                         var idCell = document.createElement("td");
-                        idCell.textContent = entity.id;
+                        idCell.textContent = devices.find(device => device.id === rowObj.deviceId)?.name || "--";
                         var timeCell = document.createElement("td");
-                        timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>";
-                        var diagnosticCell = document.createElement("td");
-                        diagnosticCell.textContent = getDiagnosticId(entity.diagnostic.id);
-                        var valueCell = document.createElement("td");
-                        valueCell.textContent = entity.data;
+                        timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(rowObj.dateTime) + "</span>";
+                        var tempCell = document.createElement("td");
+                        tempCell.textContent = rowObj.diagnostics["aq2dIrRFGfkW3g98ILX98SQ"] || "--";
+                        var rssiCell = document.createElement("td");
+                        rssiCell.textContent = rowObj.diagnostics["a3WBKyxpR9E-tXHOy0cRXjw"] || "--";
+                        var batteryCell = document.createElement("td");
+                        batteryCell.textContent = rowObj.diagnostics["DiagnosticDeviceBatteryVoltageId"] || "--";
                         row.appendChild(idCell);
                         row.appendChild(timeCell);
-                        row.appendChild(diagnosticCell);
-                        row.appendChild(valueCell);
+                        row.appendChild(tempCell);
+                        row.appendChild(rssiCell);
+                        row.appendChild(batteryCell);
                         table.appendChild(row);
                     });
 
                     return table;
                 },
                 refreshPage = function () {
-                    api.call("Get", {
-                        "typeName": "StatusData",
-                        "sort": {
-                            "sortBy": "date",
-                            "sortDirection": "desc",
-                        },
-                        "resultsLimit": 1000,
-                    }, function (result) {
-                        console.log("result : ", result);
-                        var list = listCreator(result);
-                        center.innerHTML = "";
-                        center.appendChild(list);
-                    }, function (error) {
-                        console.log(error.message);
-                    });
+                    api.multiCall(
+                        [["Get", {
+                            "typeName": "StatusData",
+                            "sort": {
+                                "sortBy": "date",
+                                "sortDirection": "desc",
+                            },
+                            "resultsLimit": 1000,
+                        }],
+                        ["Get", {
+                            "typeName": "Device",
+                        }]], function (result) {
+                            if (result !== undefined && result.length > 0) {
+                                console.log("result : ", result);
+                                var list = listCreator(result[0], result[1]);
+                                center.innerHTML = "";
+                                center.appendChild(list);
+                            }
+                        }, function (error) {
+                            console.log(error.message);
+                        });
+
+                    // api.call("Get", {
+                    //     "typeName": "StatusData",
+                    //     "sort": {
+                    //         "sortBy": "date",
+                    //         "sortDirection": "desc",
+                    //     },
+                    //     "resultsLimit": 1000,
+                    // }, function (result) {
+                    //     console.log("result : ", result);
+                    //     var list = listCreator(result);
+                    //     center.innerHTML = "";
+                    //     center.appendChild(list);
+                    // }, function (error) {
+                    //     console.log(error.message);
+                    // });
                 },
                 clearOnLeaving = function () {
                     center.innerHTML = "";
