@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>BLE</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script>
+        // Helper function to calculate time ago
+        function timeAgo(dateTime) {
+            const now = new Date();
+            const diff = now - new Date(dateTime);
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) {
+                return days + " day" + (days > 1 ? "s" : "") + " ago";
+            } else if (hours > 0) {
+                return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
+            } else if (minutes > 0) {
+                return minutes + " minute" + (minutes > 1 ? "s" : "") + " ago";
+            } else {
+                return seconds + " second" + (seconds > 1 ? "s" : "") + " ago";
+            }
+        }
+
+        geotab.addin.integrationExample = function (api, state) {
+            var center = document.getElementById("center"),
+                listCreator = function (entities) {
+                    var table = document.createElement("table");
+                    var headerRow = document.createElement("tr");
+                    headerRow.innerHTML = "<th>Address</th><th>Reported At</th>";
+                    table.appendChild(headerRow);
+
+                    entities.forEach(function (entity) {
+                        var address = entity.address.replace(/^0000/, '').toUpperCase();
+                        if (address.startsWith("C4")) {
+                            var row = document.createElement("tr");
+                            var addressCell = document.createElement("td");
+                            addressCell.textContent = address;
+                            var timeCell = document.createElement("td");
+                            timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>";
+                            row.appendChild(addressCell);
+                            row.appendChild(timeCell);
+                            table.appendChild(row);
+                        }
+                    });
+
+                    return table;
+                },
+                refreshPage = function () {
+                    api.call("Get", {
+                        "typeName": "StatusData",
+                        "search": {
+                            "diagnosticSearch": {
+                                "id": "DiagnosticBluetoothBeaconInRangeId"
+                            }
+                        },
+                        "sort": {
+                            "sortBy": "date",
+                            "sortDirection": "desc",
+                        },
+                    }, function (result) {
+                        console.log("result : ", result);
+                        var list = listCreator(result);
+                        center.innerHTML = "";
+                        center.appendChild(list);
+                    }, function (error) {
+                        console.log(error.message);
+                    });
+                },
+                clearOnLeaving = function () {
+                    center.innerHTML = "";
+                };
+
+            return {
+                initialize: function (api, state, callback) {
+                    callback();
+                },
+                focus: function (api, state) {
+                    refreshPage();
+                },
+                blur: function (api, state) {
+                    clearOnLeaving();
+                }
+            };
+        };
+    </script>
+</head>
+
+<body>
+    <div id="center" class="TNT_main"></div>
+</body>
+
+</html>

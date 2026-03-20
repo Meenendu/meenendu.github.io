@@ -1,96 +1,58 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>BLE Scanner PWA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div>
+          <h1>BLE Scanner</h1>
+          <p>Live scan nearby Bluetooth LE devices and list their IDs.</p>
+        </div>
+        <span class="badge">PWA</span>
+      </header>
 
-<head>
-    <title>BLE</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <script>
-        // Helper function to calculate time ago
-        function timeAgo(dateTime) {
-            const now = new Date();
-            const diff = now - new Date(dateTime);
-            const seconds = Math.floor(diff / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
+      <section class="controls">
+        <button id="startScanBtn" class="primary">Start Live Scan</button>
+        <button id="stopScanBtn" class="ghost" disabled>Stop Scan</button>
+        <button id="scanBtn" class="ghost">Scan (Chooser)</button>
+        <button id="clearBtn" class="ghost">Clear List</button>
+      </section>
 
-            if (days > 0) {
-                return days + " day" + (days > 1 ? "s" : "") + " ago";
-            } else if (hours > 0) {
-                return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
-            } else if (minutes > 0) {
-                return minutes + " minute" + (minutes > 1 ? "s" : "") + " ago";
-            } else {
-                return seconds + " second" + (seconds > 1 ? "s" : "") + " ago";
-            }
-        }
+      <section class="notice" id="supportNotice" hidden>
+        <strong>Not supported:</strong> Web Bluetooth is unavailable in this browser. Use Chrome or Edge on Android or desktop.
+      </section>
 
-        geotab.addin.integrationExample = function (api, state) {
-            var center = document.getElementById("center"),
-                listCreator = function (entities) {
-                    var table = document.createElement("table");
-                    var headerRow = document.createElement("tr");
-                    headerRow.innerHTML = "<th>Address</th><th>Reported At</th>";
-                    table.appendChild(headerRow);
+      <section class="notice" id="secureNotice" hidden>
+        <strong>Secure context required:</strong> Use HTTPS or http://localhost to scan.
+      </section>
 
-                    entities.forEach(function (entity) {
-                        var address = entity.address.replace(/^0000/, '').toUpperCase();
-                        if (address.startsWith("C4")) {
-                            var row = document.createElement("tr");
-                            var addressCell = document.createElement("td");
-                            addressCell.textContent = address;
-                            var timeCell = document.createElement("td");
-                            timeCell.innerHTML = "<span class='time-ago'>" + timeAgo(entity.dateTime) + "</span>";
-                            row.appendChild(addressCell);
-                            row.appendChild(timeCell);
-                            table.appendChild(row);
-                        }
-                    });
+      <section class="notice" id="liveNotice" hidden>
+        <strong>Live scan not supported:</strong> Your browser does not support `requestLEScan`. Use Android Chrome 78+.
+      </section>
 
-                    return table;
-                },
-                refreshPage = function () {
-                    api.call("Get", {
-                        "typeName": "StatusData",
-                        "search": {
-                            "diagnosticSearch": {
-                                "id": "DiagnosticBluetoothBeaconInRangeId"
-                            }
-                        },
-                        "sort": {
-                            "sortBy": "date",
-                            "sortDirection": "desc",
-                        },
-                    }, function (result) {
-                        console.log("result : ", result);
-                        var list = listCreator(result);
-                        center.innerHTML = "";
-                        center.appendChild(list);
-                    }, function (error) {
-                        console.log(error.message);
-                    });
-                },
-                clearOnLeaving = function () {
-                    center.innerHTML = "";
-                };
+      <section class="list">
+        <h2>Devices</h2>
+        <ul id="deviceList" class="device-list"></ul>
+      </section>
 
-            return {
-                initialize: function (api, state, callback) {
-                    callback();
-                },
-                focus: function (api, state) {
-                    refreshPage();
-                },
-                blur: function (api, state) {
-                    clearOnLeaving();
-                }
-            };
-        };
-    </script>
-</head>
+      <footer class="footer">
+        <span id="status">Idle</span>
+      </footer>
+    </main>
 
-<body>
-    <div id="center" class="TNT_main"></div>
-</body>
-
+    <script src="app.js"></script>
+  </body>
 </html>
