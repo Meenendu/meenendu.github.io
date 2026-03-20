@@ -7,6 +7,8 @@ const statusEl = document.getElementById("status");
 const supportNotice = document.getElementById("supportNotice");
 const secureNotice = document.getElementById("secureNotice");
 const liveNotice = document.getElementById("liveNotice");
+const deviceDebug = document.getElementById("deviceDebug");
+const eventDebug = document.getElementById("eventDebug");
 
 const devices = new Map();
 let liveScan = null;
@@ -40,16 +42,11 @@ function renderList() {
 
     const rssi = document.createElement("div");
     rssi.className = "device-rssi";
-    rssi.textContent =
-      typeof device.rssi === "number"
-        ? `RSSI: ${device.rssi} dBm`
-        : "RSSI: n/a";
+    rssi.textContent = typeof device.rssi === "number" ? `RSSI: ${device.rssi} dBm` : "RSSI: n/a";
 
     const lastSeen = document.createElement("div");
     lastSeen.className = "device-last";
-    lastSeen.textContent = device.lastSeen
-      ? `Last seen: ${device.lastSeen}`
-      : "";
+    lastSeen.textContent = device.lastSeen ? `Last seen: ${device.lastSeen}` : "";
 
     li.appendChild(name);
     li.appendChild(id);
@@ -66,8 +63,7 @@ function formatTime(date) {
 function checkSupport() {
   const hasBluetooth = !!navigator.bluetooth;
   const isSecure = window.isSecureContext;
-  const hasLiveScan =
-    hasBluetooth && typeof navigator.bluetooth.requestLEScan === "function";
+  const hasLiveScan = hasBluetooth && typeof navigator.bluetooth.requestLEScan === "function";
 
   supportNotice.hidden = hasBluetooth;
   secureNotice.hidden = isSecure;
@@ -102,6 +98,7 @@ async function scanWithChooser() {
 
     renderList();
     setStatus(`Added ${device.name || "device"}`);
+    updateDebug({ device });
   } catch (err) {
     if (err && err.name === "NotFoundError") {
       setStatus("No device selected");
@@ -121,13 +118,96 @@ function onAdvertisement(event) {
   devices.set(id, {
     ...existing,
     id,
-    name: JSON.stringify(existing) || name || existing.name,
+    name: name || existing.name,
     rssi: typeof event.rssi === "number" ? event.rssi : existing.rssi,
     lastSeen: now,
   });
 
   renderList();
+  updateDebug({ device: event.device, event });
   setStatus(`Live scanning... (${devices.size} devices)`);
+}
+
+function formatDataView(value) {
+  if (!value) {
+    return null;
+  }
+  const buffer = value.buffer ? value.buffer : value;
+  const byteOffset = value.byteOffset || 0;
+  const byteLength = value.byteLength || buffer.byteLength || 0;
+  const bytes = new Uint8Array(buffer, byteOffset, byteLength);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join(" ");
+}
+
+function formatMap(map) {
+  if (!map || typeof map.forEach !== "function") {
+    return null;
+  }
+  const entries = [];
+  map.forEach((value, key) => {
+    entries.push({ key, value: formatDataView(value) });
+  });
+  return entries;
+}
+
+function safeGet(fn, fallback = null) {
+  try {
+    return fn();
+  } catch {
+    return fallback;
+  }
+}
+
+function summarizeDevice(device) {
+  if (!device) {
+    return null;
+  }
+
+  const gatt = safeGet(() => device.gatt, null);
+  return {
+    id: safeGet(() => device.id, null),
+    name: safeGet(() => device.name, null),
+    gatt: gatt
+      ? {
+          connected: safeGet(() => gatt.connected, null),
+        }
+      : null,
+    hasWatchAdvertisements: typeof device.watchAdvertisements === "function",
+    hasForget: typeof device.forget === "function",
+    ownKeys: safeGet(() => Object.keys(device), []),
+  };
+}
+
+function summarizeEvent(event) {
+  if (!event) {
+    return null;
+  }
+
+  return {
+    name: event.name ?? null,
+    uuids: event.uuids ?? null,
+    appearance: event.appearance ?? null,
+    txPower: event.txPower ?? null,
+    rssi: event.rssi ?? null,
+    manufacturerData: formatMap(event.manufacturerData),
+    serviceData: formatMap(event.serviceData),
+    ownKeys: safeGet(() => Object.keys(event), []),
+  };
+}
+
+function updateDebug({ device = null, event = null }) {
+  const deviceSummary = summarizeDevice(device);
+  const eventSummary = summarizeEvent(event);
+
+  deviceDebug.textContent = deviceSummary
+    ? JSON.stringify(deviceSummary, null, 2)
+    : "No device yet.";
+
+  eventDebug.textContent = eventSummary
+    ? JSON.stringify(eventSummary, null, 2)
+    : "No advertisement yet.";
 }
 
 async function startLiveScan() {
@@ -142,10 +222,7 @@ async function startLiveScan() {
       acceptAllAdvertisements: true,
     });
 
-    navigator.bluetooth.addEventListener(
-      "advertisementreceived",
-      onAdvertisement,
-    );
+    navigator.bluetooth.addEventListener("advertisementreceived", onAdvertisement);
     startScanBtn.disabled = true;
     stopScanBtn.disabled = false;
     setStatus("Live scanning...");
@@ -166,10 +243,7 @@ function stopLiveScan() {
     console.warn(err);
   }
 
-  navigator.bluetooth.removeEventListener(
-    "advertisementreceived",
-    onAdvertisement,
-  );
+  navigator.bluetooth.removeEventListener("advertisementreceived", onAdvertisement);
   liveScan = null;
   startScanBtn.disabled = false;
   stopScanBtn.disabled = true;
@@ -183,11 +257,13 @@ clearBtn.addEventListener("click", () => {
   devices.clear();
   renderList();
   setStatus("Cleared");
+  updateDebug({});
 });
 
 window.addEventListener("load", () => {
   checkSupport();
   renderList();
+  updateDebug({});
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch((err) => {
