@@ -40,11 +40,16 @@ function renderList() {
 
     const rssi = document.createElement("div");
     rssi.className = "device-rssi";
-    rssi.textContent = typeof device.rssi === "number" ? `RSSI: ${device.rssi} dBm` : "RSSI: n/a";
+    rssi.textContent =
+      typeof device.rssi === "number"
+        ? `RSSI: ${device.rssi} dBm`
+        : "RSSI: n/a";
 
     const lastSeen = document.createElement("div");
     lastSeen.className = "device-last";
-    lastSeen.textContent = device.lastSeen ? `Last seen: ${device.lastSeen}` : "";
+    lastSeen.textContent = device.lastSeen
+      ? `Last seen: ${device.lastSeen}`
+      : "";
 
     li.appendChild(name);
     li.appendChild(id);
@@ -61,7 +66,8 @@ function formatTime(date) {
 function checkSupport() {
   const hasBluetooth = !!navigator.bluetooth;
   const isSecure = window.isSecureContext;
-  const hasLiveScan = hasBluetooth && typeof navigator.bluetooth.requestLEScan === "function";
+  const hasLiveScan =
+    hasBluetooth && typeof navigator.bluetooth.requestLEScan === "function";
 
   supportNotice.hidden = hasBluetooth;
   secureNotice.hidden = isSecure;
@@ -115,7 +121,7 @@ function onAdvertisement(event) {
   devices.set(id, {
     ...existing,
     id,
-    name: name || existing.name,
+    name: JSON.stringify(existing) || name || existing.name,
     rssi: typeof event.rssi === "number" ? event.rssi : existing.rssi,
     lastSeen: now,
   });
@@ -136,7 +142,10 @@ async function startLiveScan() {
       acceptAllAdvertisements: true,
     });
 
-    navigator.bluetooth.addEventListener("advertisementreceived", onAdvertisement);
+    navigator.bluetooth.addEventListener(
+      "advertisementreceived",
+      onAdvertisement,
+    );
     startScanBtn.disabled = true;
     stopScanBtn.disabled = false;
     setStatus("Live scanning...");
@@ -157,7 +166,10 @@ function stopLiveScan() {
     console.warn(err);
   }
 
-  navigator.bluetooth.removeEventListener("advertisementreceived", onAdvertisement);
+  navigator.bluetooth.removeEventListener(
+    "advertisementreceived",
+    onAdvertisement,
+  );
   liveScan = null;
   startScanBtn.disabled = false;
   stopScanBtn.disabled = true;
