@@ -7,8 +7,6 @@ const statusEl = document.getElementById("status");
 const supportNotice = document.getElementById("supportNotice");
 const secureNotice = document.getElementById("secureNotice");
 const liveNotice = document.getElementById("liveNotice");
-const deviceDebug = document.getElementById("deviceDebug");
-const eventDebug = document.getElementById("eventDebug");
 
 const devices = new Map();
 let liveScan = null;
@@ -104,7 +102,6 @@ async function scanWithChooser() {
 
     renderList();
     setStatus(`Added ${device.name || "device"}`);
-    updateDebug({ device });
   } catch (err) {
     if (err && err.name === "NotFoundError") {
       setStatus("No device selected");
@@ -130,92 +127,7 @@ function onAdvertisement(event) {
   });
 
   renderList();
-  updateDebug({ device: event.device, event });
   setStatus(`Live scanning... (${devices.size} devices)`);
-}
-
-function formatDataView(value) {
-  if (!value) {
-    return null;
-  }
-  const buffer = value.buffer ? value.buffer : value;
-  const byteOffset = value.byteOffset || 0;
-  const byteLength = value.byteLength || buffer.byteLength || 0;
-  const bytes = new Uint8Array(buffer, byteOffset, byteLength);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join(" ");
-}
-
-function formatMap(map) {
-  if (!map || typeof map.forEach !== "function") {
-    return null;
-  }
-  const entries = [];
-  map.forEach((value, key) => {
-    entries.push({ key, value: formatDataView(value) });
-  });
-  return entries;
-}
-
-function safeGet(fn, fallback = null) {
-  try {
-    return fn();
-  } catch {
-    return fallback;
-  }
-}
-
-function summarizeDevice(device) {
-  if (!device) {
-    return null;
-  }
-
-  const gatt = safeGet(() => device.gatt, null);
-  return {
-    id: safeGet(() => device.id, null),
-    name: safeGet(() => device.name, null),
-    gatt: gatt
-      ? {
-          connected: safeGet(() => gatt.connected, null),
-        }
-      : null,
-    hasWatchAdvertisements: typeof device.watchAdvertisements === "function",
-    hasForget: typeof device.forget === "function",
-    ownKeys: safeGet(() => Object.keys(device), []),
-    ...device, // Include all enumerable properties for debugging
-  };
-}
-
-function summarizeEvent(event) {
-  if (!event) {
-    return null;
-  }
-
-  return {
-    name: event.name ?? null,
-    uuids: event.uuids ?? null,
-    appearance: event.appearance ?? null,
-    txPower: event.txPower ?? null,
-    rssi: event.rssi ?? null,
-    manufacturerData: formatMap(event.manufacturerData),
-    serviceData: formatMap(event.serviceData),
-    ownKeys: safeGet(() => Object.keys(event), []),
-    ...event, // Include all enumerable properties for debugging
-  };
-}
-
-function updateDebug({ device = null, event = null }) {
-  const deviceSummary = summarizeDevice(device);
-  const eventSummary = summarizeEvent(event);
-
-  deviceDebug.textContent = deviceSummary
-    ? JSON.stringify(deviceSummary, null, 2)
-    : "No device yet.";
-
-  eventDebug.textContent = eventSummary
-    ? JSON.stringify(eventSummary, null, 2)
-    : "No advertisement yet.";
 }
 
 async function startLiveScan() {
@@ -271,14 +183,11 @@ clearBtn.addEventListener("click", () => {
   devices.clear();
   renderList();
   setStatus("Cleared");
-  updateDebug({});
 });
 
 window.addEventListener("load", () => {
   checkSupport();
   renderList();
-  updateDebug({});
-
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch((err) => {
       console.warn("SW registration failed", err);

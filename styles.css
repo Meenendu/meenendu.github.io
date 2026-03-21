@@ -110,8 +110,7 @@ button:disabled {
   font-size: 14px;
 }
 
-.list h2,
-.debug h2 {
+.list h2 {
   margin: 0 0 12px;
 }
 
@@ -152,35 +151,6 @@ button:disabled {
 .empty {
   color: var(--muted);
   text-align: center;
-}
-
-.debug {
-  margin-top: 24px;
-}
-
-.debug-grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-
-.debug pre {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
-  font-size: 12px;
-  color: #cbd5f5;
-  overflow-x: auto;
-  min-height: 140px;
-}
-
-.debug h3 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
 }
 
 .footer {
